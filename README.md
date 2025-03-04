@@ -1,11 +1,3 @@
-### **🚀 Updated `README.md` with Latest Changes**
-This updated README now includes:
-- ✅ **Capturing single & multiple screens** as files & Base64.
-- ✅ **Integration test details** for plugin validation.
-- ✅ **Expanded example app** with all four capture methods.
-
----
-
 # **flutter_multi_screenshot**
 A **Flutter plugin** for capturing screenshots on **Linux**. This plugin supports capturing **single or multiple screens** and saving them as **files** or **Base64-encoded strings**, making it easy to integrate screenshot functionality into Flutter desktop apps.
 
@@ -226,6 +218,3 @@ This plugin is licensed under the **MIT License**.
 Pull requests are welcome! If you find a bug or have suggestions, **open an issue**.
 
 ---
-
-### 🎯 **Now your README file reflects the latest multi-screen updates!** 🚀  
-Let me know if you need any modifications! 🔥
