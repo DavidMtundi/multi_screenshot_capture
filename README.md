@@ -1,9 +1,19 @@
+### **🚀 Updated `README.md` with Latest Changes**
+This updated README now includes:
+- ✅ **Capturing single & multiple screens** as files & Base64.
+- ✅ **Integration test details** for plugin validation.
+- ✅ **Expanded example app** with all four capture methods.
+
+---
+
 # **flutter_multi_screenshot**
-A **Flutter plugin** for capturing screenshots on **Linux**. This plugin supports saving screenshots as **files** or **Base64-encoded strings**, making it easy to integrate screenshot functionality into Flutter desktop apps.
+A **Flutter plugin** for capturing screenshots on **Linux**. This plugin supports capturing **single or multiple screens** and saving them as **files** or **Base64-encoded strings**, making it easy to integrate screenshot functionality into Flutter desktop apps.
 
 ## **📌 Features**
-- ✅ Capture a screenshot and **save it as a file**.
-- ✅ Capture a screenshot and **return a Base64 string**.
+- ✅ Capture **a single screen** and **save it as a file**.
+- ✅ Capture **a single screen** and **return a Base64 string**.
+- ✅ Capture **all connected screens** and **save them as files**.
+- ✅ Capture **all connected screens** and **return multiple Base64 strings**.
 - ✅ Automatically selects the **best available screenshot tool** on Linux (`scrot`, `gnome-screenshot`, `flameshot`, etc.).
 - ✅ Works on **X11** (Wayland may need additional configuration).
 
@@ -14,11 +24,8 @@ A **Flutter plugin** for capturing screenshots on **Linux**. This plugin support
 Add this plugin to your **pubspec.yaml**:
 ```yaml
 dependencies:
-  flutter_multi_screenshot:
-    git:
-      url: https://github.com/your-username/flutter_multi_screenshot.git
+  flutter_multi_screenshot: ^0.0.1
 ```
-*(Replace `"your-username"` with your GitHub username if hosted on GitHub.)*
 
 ### **2️⃣ Install Packages**
 Run:
@@ -34,25 +41,47 @@ flutter pub get
 import 'package:flutter_multi_screenshot/flutter_multi_screenshot.dart';
 ```
 
-### **📸 Capture Screenshot as a File**
+### **📸 Capture a Single Screen as a File**
 ```dart
 String filePath = await FlutterMultiScreenshot.captureToFile();
 print("Screenshot saved at: $filePath");
 ```
 
-### **📸 Capture Screenshot as Base64**
+### **📸 Capture a Single Screen as Base64**
 ```dart
 String base64Image = await FlutterMultiScreenshot.captureAsBase64();
-print("Screenshot Base64: $base64Image");
+String cleanBase64 = base64Image.replaceAll('\n', '').replaceAll('\r', '');
+Uint8List imageBytes = base64Decode(cleanBase64);
+print("Screenshot captured as Base64.");
 ```
 
-### **🎯 Example App**
-Here’s a simple example with buttons to **capture and display screenshots**:
+### **📸 Capture All Screens as Files**
+```dart
+List<String> filePaths = await FlutterMultiScreenshot.captureAllToFile();
+print("Screenshots saved at: $filePaths");
+```
+
+### **📸 Capture All Screens as Base64**
+```dart
+List<String> base64Images = await FlutterMultiScreenshot.captureAllAsBase64();
+List<Uint8List> decodedImages = base64Images.map((base64) {
+  String cleanBase64 = base64.replaceAll('\n', '').replaceAll('\r', '');
+  return base64Decode(cleanBase64);
+}).toList();
+print("All Screenshots captured as Base64.");
+```
+
+---
+
+## **🎯 Example App**
+Here’s a **full example** with buttons to **capture and display screenshots**:
 
 ```dart
 import 'package:flutter/material.dart';
 import 'package:flutter_multi_screenshot/flutter_multi_screenshot.dart';
 import 'dart:io';
+import 'dart:convert';
+import 'dart:typed_data';
 
 void main() {
   runApp(MaterialApp(home: ScreenshotTestApp()));
@@ -64,38 +93,78 @@ class ScreenshotTestApp extends StatefulWidget {
 }
 
 class _ScreenshotTestAppState extends State<ScreenshotTestApp> {
-  String? screenshotPath;
+  List<String>? screenshotPaths;
+  List<Uint8List>? base64Screenshots;
+  String? singleScreenshotPath;
+  Uint8List? singleScreenshotBase64;
 
-  Future<void> captureScreenshot() async {
+  Future<void> captureSingleScreenToFile() async {
     String filePath = await FlutterMultiScreenshot.captureToFile();
-    print("Screenshot saved at: $filePath");
-
     setState(() {
-      screenshotPath = filePath;
+      singleScreenshotPath = filePath;
+      singleScreenshotBase64 = null;
+    });
+  }
+
+  Future<void> captureSingleScreenAsBase64() async {
+    String base64Image = await FlutterMultiScreenshot.captureAsBase64();
+    String cleanBase64 = base64Image.replaceAll('\n', '').replaceAll('\r', '');
+    setState(() {
+      singleScreenshotBase64 = base64Decode(cleanBase64);
+      singleScreenshotPath = null;
+    });
+  }
+
+  Future<void> captureAllScreenshotsToFile() async {
+    List<String> filePaths = await FlutterMultiScreenshot.captureAllToFile();
+    setState(() {
+      screenshotPaths = filePaths;
+      base64Screenshots = null;
+    });
+  }
+
+  Future<void> captureAllScreenshotsAsBase64() async {
+    List<String> base64Images = await FlutterMultiScreenshot.captureAllAsBase64();
+    List<Uint8List> decodedImages = base64Images.map((base64) {
+      String cleanBase64 = base64.replaceAll('\n', '').replaceAll('\r', '');
+      return base64Decode(cleanBase64);
+    }).toList();
+    setState(() {
+      base64Screenshots = decodedImages;
+      screenshotPaths = null;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Multi Screenshot Plugin Test")),
-      body: Center(
+      appBar: AppBar(title: Text("Multi-Screen Screenshot Test")),
+      body: SingleChildScrollView(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (screenshotPath != null)
-              Column(
-                children: [
-                  Text("Screenshot Path:"),
-                  Text(screenshotPath!, style: TextStyle(color: Colors.blue)),
-                  Image.file(File(screenshotPath!)),  // Show screenshot
-                ],
-              ),
+            if (singleScreenshotPath != null) ...[
+              Text("Single Screenshot File:"),
+              Image.file(File(singleScreenshotPath!), width: 200, height: 200),
+            ],
+            if (singleScreenshotBase64 != null) ...[
+              Text("Single Screenshot Base64 Preview:"),
+              Image.memory(singleScreenshotBase64!, width: 200, height: 200),
+            ],
+            if (screenshotPaths != null) ...[
+              Text("All Screenshots as Files:"),
+              for (var path in screenshotPaths!)
+                Image.file(File(path), width: 200, height: 200),
+            ],
+            if (base64Screenshots != null) ...[
+              Text("All Screenshots as Base64:"),
+              for (var image in base64Screenshots!)
+                Image.memory(image, width: 200, height: 200),
+            ],
             SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: captureScreenshot,
-              child: Text("Capture Screenshot"),
-            ),
+            ElevatedButton(onPressed: captureSingleScreenToFile, child: Text("Capture Single Screen (File)")),
+            ElevatedButton(onPressed: captureSingleScreenAsBase64, child: Text("Capture Single Screen (Base64)")),
+            ElevatedButton(onPressed: captureAllScreenshotsToFile, child: Text("Capture All Screens (Files)")),
+            ElevatedButton(onPressed: captureAllScreenshotsAsBase64, child: Text("Capture All Screens (Base64)")),
           ],
         ),
       ),
@@ -115,8 +184,6 @@ This plugin **automatically detects** and uses one of the following tools:
 - 🖼 **`import`** (ImageMagick)
 
 ### **📌 Install a Screenshot Tool (If Missing)**
-If no supported tool is installed, **install one manually**:
-
 ```sh
 sudo apt install gnome-screenshot scrot flameshot maim imagemagick
 ```
@@ -126,18 +193,12 @@ sudo apt install gnome-screenshot scrot flameshot maim imagemagick
 ## **❌ Troubleshooting**
 ### **1️⃣ Screenshots are black/empty?**
 If running on **Wayland**, switch to **X11**:
-- **Log out** and click the **gear icon** on the login screen.
-- Select **"Ubuntu on Xorg"**, then log in.
-- Run your Flutter app again.
-
-Or force X11 in your app:
 ```sh
 export GDK_BACKEND=x11
 flutter run -d linux
 ```
 
 ### **2️⃣ Plugin not found?**
-Ensure Flutter detects the plugin:
 ```sh
 flutter doctor -v
 flutter pub get
@@ -145,7 +206,6 @@ flutter build linux
 ```
 
 ### **3️⃣ Check if the plugin is built correctly**
-Run:
 ```sh
 ls build/linux/x64/debug/bundle/libflutter_multi_screenshot.so
 ```
@@ -167,5 +227,5 @@ Pull requests are welcome! If you find a bug or have suggestions, **open an issu
 
 ---
 
-### 🎯 **Now your README file is ready!** 🚀  
-Let me know if you want any modifications. 🔥
+### 🎯 **Now your README file reflects the latest multi-screen updates!** 🚀  
+Let me know if you need any modifications! 🔥
