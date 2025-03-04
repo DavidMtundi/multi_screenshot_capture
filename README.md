@@ -1,11 +1,3 @@
-# flutter_multi_screenshot
-
-## Getting Started
-
-Here's a **README.md** file for your **Flutter Linux Screenshot Plugin**:  
-
----
-
 # **flutter_multi_screenshot**
 A **Flutter plugin** for capturing screenshots on **Linux**. This plugin supports saving screenshots as **files** or **Base64-encoded strings**, making it easy to integrate screenshot functionality into Flutter desktop apps.
 
