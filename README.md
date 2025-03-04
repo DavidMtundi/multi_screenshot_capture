@@ -16,7 +16,7 @@ A **Flutter plugin** for capturing screenshots on **Linux**. This plugin support
 Add this plugin to your **pubspec.yaml**:
 ```yaml
 dependencies:
-  flutter_multi_screenshot: ^0.0.1
+  flutter_multi_screenshot: ^1.0.2
 ```
 
 ### **2️⃣ Install Packages**
