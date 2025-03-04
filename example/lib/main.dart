@@ -1,133 +1,161 @@
-import 'dart:async';
-import 'dart:typed_data';
-import 'dart:io';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_multi_screenshot/flutter_multi_screenshot.dart';
-import 'package:path_provider/path_provider.dart';
+import 'dart:io';
+import 'dart:convert';
+import 'dart:typed_data';
 
 void main() {
-  runApp(MaterialApp(
-    home: ScreenshotPage(),
-    debugShowCheckedModeBanner: false,
-  ));
+  runApp(MaterialApp(home: ScreenshotTestApp()));
 }
 
-class ScreenshotPage extends StatefulWidget {
-  const ScreenshotPage({super.key});
+class ScreenshotTestApp extends StatefulWidget {
+  const ScreenshotTestApp({super.key});
 
   @override
-  _ScreenshotPageState createState() => _ScreenshotPageState();
+  _ScreenshotTestAppState createState() => _ScreenshotTestAppState();
 }
 
-class _ScreenshotPageState extends State<ScreenshotPage> {
-  String? screenshotPath;
-  Uint8List? screenshotBytes;
+class _ScreenshotTestAppState extends State<ScreenshotTestApp> {
+  List<String>? screenshotPaths;
+  List<Uint8List>? base64Screenshots;
+  String? singleScreenshotPath;
+  Uint8List? singleScreenshotBase64;
 
-  /// Capture screenshot and save as a file
-  Future<void> captureScreenshotToFile() async {
-    try {
-    
-      String filePath = await FlutterMultiScreenshot.captureToFile();
-      print("Screenshot saved at: $filePath");
-
-      setState(() {
-        screenshotPath = filePath;
-        screenshotBytes = null; // Reset base64 display
-      });
-    } catch (e) {
-      print("Error capturing screenshot: $e");
-    }
-  }
-
-  /// Capture screenshot and display it from Base64
-  Future<void> captureScreenshotAsBase64() async {
-    String filePath = "";
-    try {
-      String base64Image = await FlutterMultiScreenshot.captureAsBase64();
-      print("Screenshot captured as base64: $base64Image");
-
-      if (base64Image != null) {
-        // Convert base64 to an image and display it
-        String cleanBase64 = base64Image.replaceAll('\n', '').replaceAll('\r', '');
-        Uint8List bytes = base64Decode(cleanBase64);
-
-        // Get temp directory path
-        Directory tempDir = await getTemporaryDirectory();
-        filePath = '${tempDir.path}/screenshot_${DateTime.now().millisecondsSinceEpoch}.png';
-
-        // Save bytes to file
-        File file = File(filePath);
-        await file.writeAsBytes(bytes);
-      
-        print("Screenshot saved at: $filePath");
-        setState(() {
-          screenshotPath = filePath;
-          screenshotBytes = bytes;
-        });
-      }
-    } catch (e) {
-      print("Error capturing screenshot as base64: $e");
-    }
-  }
-
-  /// Save Base64 screenshot to a file
-  Future<void> saveBase64ToFile() async {
-    if (screenshotBytes == null) return;
-
-    Directory tempDir = await getTemporaryDirectory();
-    String filePath = '${tempDir.path}/screenshot_${DateTime.now().millisecondsSinceEpoch}.png';
-
-    File file = File(filePath);
-    await file.writeAsBytes(screenshotBytes!);
-
-    print("Base64 Screenshot saved at: $filePath");
+  /// Capture a single screen as a file
+  Future<void> captureSingleScreenToFile() async {
+    String filePath = await FlutterMultiScreenshot.captureToFile();
+    print("Single Screenshot saved at: $filePath");
 
     setState(() {
-      screenshotPath = filePath;
+      singleScreenshotPath = filePath;
+      singleScreenshotBase64 = null;
+    });
+  }
+
+  /// Capture a single screen as Base64
+  Future<void> captureSingleScreenAsBase64() async {
+    String base64Image = await FlutterMultiScreenshot.captureAsBase64();
+    String cleanBase64 = base64Image.replaceAll('\n', '').replaceAll('\r', '');
+
+    print("Single Screenshot Base64 Captured.");
+
+    setState(() {
+      singleScreenshotBase64 = base64Decode(cleanBase64);
+      singleScreenshotPath = null;
+    });
+  }
+
+  /// Capture screenshots of all screens and save to files
+  Future<void> captureAllScreenshotsToFile() async {
+    List<String> filePaths = await FlutterMultiScreenshot.captureAllToFile();
+    print("All Screenshots saved at: $filePaths");
+
+    setState(() {
+      screenshotPaths = filePaths;
+      base64Screenshots = null;
+    });
+  }
+
+  /// Capture screenshots of all screens as Base64
+  Future<void> captureAllScreenshotsAsBase64() async {
+    List<String> base64Images = await FlutterMultiScreenshot.captureAllAsBase64();
+
+    // ✅ Apply `.replaceAll('\n', '').replaceAll('\r', '')` to EACH Base64 string
+    List<Uint8List> decodedImages = base64Images.map((base64) {
+      String cleanBase64 = base64.replaceAll('\n', '').replaceAll('\r', '');
+      return base64Decode(cleanBase64);
+    }).toList();
+
+    print("All Screenshots as Base64 captured.");
+
+    setState(() {
+      base64Screenshots = decodedImages;
+      screenshotPaths = null;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Screenshot Plugin Test")),
-      body: Center(
+      appBar: AppBar(title: Text("Multi-Screen Screenshot Test")),
+      body: SingleChildScrollView(  // ✅ Enables scrolling
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (screenshotPath != null)
-              Column(
-                children: [
-                  Text("Screenshot saved at:", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  SizedBox(height: 5),
-                  Text(screenshotPath!, style: TextStyle(fontSize: 14, color: Colors.blueGrey)),
-                  SizedBox(height: 10),
-                  Image.file(File(screenshotPath!), width: 200, height: 200, fit: BoxFit.cover),
-                ],
+            if (singleScreenshotPath != null) ...[
+              Text("Single Screenshot File:"),
+              Text(singleScreenshotPath!, style: TextStyle(color: Colors.blue)),
+              Image.file(File(singleScreenshotPath!), width: 200, height: 200, fit: BoxFit.cover),
+              SizedBox(height: 10),
+            ],
+            if (singleScreenshotBase64 != null) ...[
+              Text("Single Screenshot Base64 Preview:"),
+              Image.memory(singleScreenshotBase64!, width: 200, height: 200, fit: BoxFit.cover),
+              SizedBox(height: 10),
+            ],
+            if (screenshotPaths != null) ...[
+              Text("All Screenshots as Files:"),
+              Container(  // ✅ Wrap in a container with a fixed height
+                height: 300,  // Adjust height as needed
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  physics: AlwaysScrollableScrollPhysics(),
+                  itemCount: screenshotPaths!.length,
+                  itemBuilder: (context, index) {
+                    return Column(
+                      children: [
+                        Text(screenshotPaths![index], style: TextStyle(color: Colors.blue)),
+                        Image.file(File(screenshotPaths![index]), width: 200, height: 200, fit: BoxFit.cover),
+                        SizedBox(height: 10),
+                      ],
+                    );
+                  },
+                ),
               ),
-            if (screenshotBytes != null)
-              Column(
-                children: [
-                  Text("Base64 Screenshot Preview", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  SizedBox(height: 10),
-                  Image.memory(screenshotBytes!, width: 200, height: 200, fit: BoxFit.cover),
-                  SizedBox(height: 10),
-                  ElevatedButton(
-                    onPressed: saveBase64ToFile,
-                    child: Text("Save Base64 to File"),
-                  ),
-                ],
+            ],
+            if (base64Screenshots != null) ...[
+              Text("All Screenshots as Base64:"),
+              Container(  // ✅ Wrap in a container with a fixed height
+                height: 300,  // Adjust height as needed
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  physics: AlwaysScrollableScrollPhysics(),
+                  itemCount: base64Screenshots!.length,
+                  itemBuilder: (context, index) {
+                    return Column(
+                      children: [
+                        Image.memory(
+                          base64Screenshots![index],
+                          width: 200,
+                          height: 200,
+                          fit: BoxFit.cover,
+                        ),
+                        SizedBox(height: 10),
+                      ],
+                    );
+                  },
+                ),
               ),
+            ],
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: captureScreenshotToFile,
-              child: Text("Capture Screenshot to File"),
+              onPressed: captureSingleScreenToFile,
+              child: Text("Capture Single Screen (File)"),
             ),
             SizedBox(height: 10),
             ElevatedButton(
-              onPressed: captureScreenshotAsBase64,
-              child: Text("Capture Screenshot as Base64"),
+              onPressed: captureSingleScreenAsBase64,
+              child: Text("Capture Single Screen (Base64)"),
+            ),
+            SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: captureAllScreenshotsToFile,
+              child: Text("Capture All Screens (Files)"),
+            ),
+            SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: captureAllScreenshotsAsBase64,
+              child: Text("Capture All Screens (Base64)"),
             ),
           ],
         ),

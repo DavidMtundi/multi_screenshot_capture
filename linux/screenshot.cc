@@ -20,7 +20,8 @@
 // Method names
 static const char* kCaptureScreenshotAsBase64 = "captureScreenshotAsBase64";
 static const char* kCaptureScreenshotToFile = "captureScreenshotToFile";
-
+static const char* kCaptureAllScreenshotsAsBase64 = "captureAllScreenshotsAsBase64";
+static const char* kCpatureAllScreenShotsToFiles = "captureAllScreenshotsToFiles";
 // Screenshot tool names
 static const char* kScrot = "scrot";
 static const char* kGnomeScreenshot = "gnome-screenshot";
@@ -53,7 +54,61 @@ std::string get_timestamp() {
     auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
     return std::to_string(millis);
 }
+// Get number of monitors
+int get_monitor_count() {
+    int count = 0;
+    std::string command = "xrandr --listmonitors | wc -l";
+    std::string output = execute_command(command);
+    try {
+        count = std::stoi(output) - 1; // Remove header line
+    } catch (...) {
+        count = 1; // Default to one screen
+    }
+    return count;
+}
+// Capture screenshots from all monitors
+std::vector<std::string> capture_all_screenshots() {
+    std::vector<std::string> file_paths;
+    int monitor_count = get_monitor_count();
 
+    for (int i = 0; i < monitor_count; i++) {
+        std::string file_path = "/tmp/screenshot_" + get_timestamp() + "_monitor" + std::to_string(i) + ".png";
+        
+        std::string command;
+        if (command_exists(kGnomeScreenshot)) {
+            command = "gnome-screenshot --file=" + file_path + " --include-pointer --delay=2 --screen";
+        } else if (command_exists(kImageMagick)) {
+            command = "import -window root " + file_path;
+        } else if (command_exists(kScrot)) {
+            command = "scrot " + file_path;
+        } else {
+            throw std::runtime_error("No supported screenshot tool found.");
+        }
+
+        if (system(command.c_str()) != 0) {
+            throw std::runtime_error("Failed to capture screenshot for monitor " + std::to_string(i));
+        }
+
+        file_paths.push_back(file_path);
+    }
+
+    return file_paths;
+}
+
+// Convert all screenshots to Base64
+std::vector<std::string> capture_all_screenshots_as_base64() {
+    std::vector<std::string> base64_images;
+    std::vector<std::string> file_paths = capture_all_screenshots();
+
+    for (const auto& file_path : file_paths) {
+        std::string command = "base64 " + file_path;
+        std::string base64_image = execute_command(command);
+        base64_images.push_back(base64_image);
+        remove(file_path.c_str()); // Delete temporary file
+    }
+
+    return base64_images;
+}
 // Base class for screenshot tools
 class ScreenshotTool {
 public:
@@ -197,8 +252,22 @@ void screenshot_plugin_handle_method_call(FlMethodChannel* channel, FlMethodCall
 
     try {
         auto screenshot_tool = create_screenshot_tool_updated();
-
-        if (strcmp(method, kCaptureScreenshotAsBase64) == 0) {
+        if (strcmp(method, kCaptureAllScreenshotsAsBase64) == 0) {
+            std::vector<std::string> base64_images = capture_all_screenshots_as_base64();
+            g_autoptr(FlValue) result = fl_value_new_list();
+            for (const auto& img : base64_images) {
+                fl_value_append_take(result, fl_value_new_string(img.c_str()));
+            }
+            fl_method_call_respond_success(method_call, result, nullptr);
+        } else if (strcmp(method, kCpatureAllScreenShotsToFiles) == 0) {
+            std::vector<std::string> file_paths = capture_all_screenshots();
+            g_autoptr(FlValue) result = fl_value_new_list();
+            for (const auto& path : file_paths) {
+                fl_value_append_take(result, fl_value_new_string(path.c_str()));
+            }
+            fl_method_call_respond_success(method_call, result, nullptr);
+        } 
+        else if (strcmp(method, kCaptureScreenshotAsBase64) == 0) {
             std::string base64_image = screenshot_tool->capture_as_base64();
             g_autoptr(FlValue) result = fl_value_new_string(base64_image.c_str());
             fl_method_call_respond_success(method_call, result, nullptr);
