@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_multi_screenshot/flutter_multi_screenshot.dart';
 import 'package:flutter_multi_screenshot/flutter_multi_screenshot_platform_interface.dart';
 import 'package:flutter_multi_screenshot/flutter_multi_screenshot_method_channel.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
@@ -20,10 +19,9 @@ void main() {
   });
 
   test('getPlatformVersion', () async {
-    FlutterMultiScreenshot flutterMultiScreenshotPlugin = FlutterMultiScreenshot();
     MockFlutterMultiScreenshotPlatform fakePlatform = MockFlutterMultiScreenshotPlatform();
     FlutterMultiScreenshotPlatform.instance = fakePlatform;
 
-    expect(await flutterMultiScreenshotPlugin.getPlatformVersion(), '42');
+    expect(await fakePlatform.getPlatformVersion(), '42');
   });
 }

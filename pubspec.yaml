@@ -1,22 +1,22 @@
 name: flutter_multi_screenshot
 description: "A Flutter plugin for capturing screenshots on Linux."
-version: 1.0.3
+version: 1.0.4
 homepage: https://github.com/DavidMtundi/multi_screenshot_capture
 repository: https://github.com/DavidMtundi/multi_screenshot_capture
 
 environment:
-  sdk: ">=3.0.0 <4.0.0"  # ✅ Ensures compatibility with all SDKs from 3.0.0 to future stable versions
-  flutter: ">=3.10.0"    # ✅ Targets 2023+ Flutter versions
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.10.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  plugin_platform_interface: ^2.1.4  # ✅ Updated to the latest stable version
+  plugin_platform_interface: ^2.1.4
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.1  # ✅ Updated to the latest linter package
+  flutter_lints: ^5.0.0
 
 flutter:
   plugin:
